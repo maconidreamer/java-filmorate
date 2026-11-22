@@ -81,13 +81,9 @@ class ControllerRequestTest {
 
         mockMvc.perform(put("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "id": 3,
-                                    "email": "user3@example.org",
-                                    "login": "updated"
-                                }
-                                """))
+                        .content("{\"id\":3,"
+                                + "\"email\":\"user3@example.org\","
+                                + "\"login\":\"updated\"}"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/users/1/friends/common/2"))
@@ -109,13 +105,9 @@ class ControllerRequestTest {
 
     @Test
     void duplicateLikesDoNotAffectRankingAndFilmUpdateKeepsLikes() throws Exception {
-        String film = """
-                {
-                    "name": "Film",
-                    "releaseDate": "2000-01-01",
-                    "duration": 100
-                }
-                """;
+        String film = "{\"name\":\"Film\","
+                + "\"releaseDate\":\"2000-01-01\","
+                + "\"duration\":100}";
 
         for (int id = 1; id <= 2; id++) {
             mockMvc.perform(post("/films")
@@ -139,14 +131,10 @@ class ControllerRequestTest {
 
         mockMvc.perform(put("/films")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "id": 2,
-                                    "name": "Updated",
-                                    "releaseDate": "2000-01-01",
-                                    "duration": 100
-                                }
-                                """))
+                        .content("{\"id\":2,"
+                                + "\"name\":\"Updated\","
+                                + "\"releaseDate\":\"2000-01-01\","
+                                + "\"duration\":100}"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/films/popular").param("count", "1"))
