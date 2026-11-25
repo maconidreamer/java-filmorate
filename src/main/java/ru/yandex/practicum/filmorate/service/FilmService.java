@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -30,8 +31,11 @@ public class FilmService {
         return filmStorage.getAll();
     }
 
-    public Film getById(int id) {
-        return filmStorage.getById(id);
+    public Film getById(Integer id) {
+        return filmStorage.getById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        "Фильм с id=" + id + " не найден"
+                ));
     }
 
     public Film create(Film film) {
@@ -43,7 +47,7 @@ public class FilmService {
     }
 
     public Film update(Film film) {
-        filmStorage.getById(film.getId());
+        getById(film.getId());
         validateFilm(film);
         Film updated = filmStorage.update(film);
         log.info("Обновлён фильм: id={}, name={}",
@@ -52,20 +56,24 @@ public class FilmService {
     }
 
     public void addLike(int id, int userId) {
-        userStorage.getById(userId);
+        validateUserExists(userId);
+        getById(id);
         filmStorage.addLike(id, userId);
         log.debug("Добавлен лайк: filmId={}, userId={}", id, userId);
     }
 
     public void removeLike(int id, int userId) {
-        userStorage.getById(userId);
+        validateUserExists(userId);
+        getById(id);
         filmStorage.removeLike(id, userId);
         log.debug("Удалён лайк: filmId={}, userId={}", id, userId);
     }
 
     public List<Film> getPopular(int count) {
-        if (count < 0) {
-            throw new ValidationException("Количество фильмов не может быть отрицательным");
+        if (count <= 0) {
+            throw new ValidationException(
+                    "Количество фильмов должно быть положительным"
+            );
         }
 
         return filmStorage.getLikeCounts().entrySet().stream()
@@ -74,6 +82,13 @@ public class FilmService {
                 .limit(count)
                 .map(Map.Entry::getKey)
                 .toList();
+    }
+
+    private void validateUserExists(int userId) {
+        userStorage.getById(userId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Пользователь с id=" + userId + " не найден"
+                ));
     }
 
     private void validateFilm(Film film) {

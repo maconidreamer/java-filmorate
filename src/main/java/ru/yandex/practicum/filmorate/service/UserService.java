@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -26,8 +27,11 @@ public class UserService {
         return userStorage.getAll();
     }
 
-    public User getById(int id) {
-        return userStorage.getById(id);
+    public User getById(Integer id) {
+        return userStorage.getById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        "Пользователь с id=" + id + " не найден"
+                ));
     }
 
     public User create(User user) {
@@ -39,7 +43,7 @@ public class UserService {
     }
 
     public User update(User user) {
-        userStorage.getById(user.getId());
+        getById(user.getId());
         validateUser(user);
         User updated = userStorage.update(user);
         log.info("Обновлён пользователь: id={}, login={}",
@@ -48,24 +52,25 @@ public class UserService {
     }
 
     public void addFriend(int id, int friendId) {
-        if (id == friendId) {
-            userStorage.getById(id);
-            throw new ValidationException("Пользователь не может добавить себя в друзья");
-        }
+        validateUsers(id, friendId);
         userStorage.addFriendship(id, friendId);
         log.debug("Добавлена дружба: userId={}, friendId={}", id, friendId);
     }
 
     public void removeFriend(int id, int friendId) {
+        validateUsers(id, friendId);
         userStorage.removeFriendship(id, friendId);
         log.debug("Удалена дружба: userId={}, friendId={}", id, friendId);
     }
 
     public List<User> getFriends(int id) {
+        getById(id);
         return userStorage.getFriends(id);
     }
 
     public List<User> getCommonFriends(int id, int otherId) {
+        validateUsers(id, otherId);
+
         List<User> friends = userStorage.getFriends(id);
         Set<Integer> otherFriendIds = userStorage.getFriends(otherId).stream()
                 .map(User::getId)
@@ -74,6 +79,17 @@ public class UserService {
         return friends.stream()
                 .filter(friend -> otherFriendIds.contains(friend.getId()))
                 .toList();
+    }
+
+    private void validateUsers(int id, int otherId) {
+        getById(id);
+        getById(otherId);
+
+        if (id == otherId) {
+            throw new ValidationException(
+                    "Идентификаторы пользователей должны различаться"
+            );
+        }
     }
 
     private void validateUser(User user) {
