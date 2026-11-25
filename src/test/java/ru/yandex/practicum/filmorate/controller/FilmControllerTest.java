@@ -10,6 +10,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.function.Consumer;
@@ -23,7 +26,11 @@ class FilmControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new FilmController();
+        FilmService filmService = new FilmService(
+                new InMemoryFilmStorage(),
+                new InMemoryUserStorage()
+        );
+        controller = new FilmController(filmService);
     }
 
     @Test
@@ -139,7 +146,8 @@ class FilmControllerTest {
                 invalidFilm("null name", film -> film.setName(null)),
                 invalidFilm("empty name", film -> film.setName("")),
                 invalidFilm("blank name", film -> film.setName("   ")),
-                invalidFilm("description of 201 characters", film -> film.setDescription("a".repeat(201))),
+                invalidFilm("description of 201 characters",
+                        film -> film.setDescription("a".repeat(201))),
                 invalidFilm("null release date", film -> film.setReleaseDate(null)),
                 invalidFilm("day before minimum release date",
                         film -> film.setReleaseDate(LocalDate.of(1895, 12, 27))),

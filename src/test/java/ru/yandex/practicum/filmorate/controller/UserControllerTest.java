@@ -11,6 +11,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.function.Consumer;
@@ -24,7 +26,8 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new UserController();
+        UserService userService = new UserService(new InMemoryUserStorage());
+        controller = new UserController(userService);
     }
 
     @Test
@@ -149,7 +152,8 @@ class UserControllerTest {
                 invalidUser("empty login", user -> user.setLogin("")),
                 invalidUser("blank login", user -> user.setLogin("   ")),
                 invalidUser("login containing a space", user -> user.setLogin("user name")),
-                invalidUser("birthday tomorrow", user -> user.setBirthday(LocalDate.now().plusDays(1)))
+                invalidUser("birthday tomorrow",
+                        user -> user.setBirthday(LocalDate.now().plusDays(1)))
         );
     }
 
